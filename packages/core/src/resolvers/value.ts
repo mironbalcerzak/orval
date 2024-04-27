@@ -45,6 +45,7 @@ export const resolveValue = ({
 
     return {
       value: resolvedImport.name,
+      factoryMethodValue: `create${resolvedImport.name}()`,
       imports: [
         {
           name: resolvedImport.name,
