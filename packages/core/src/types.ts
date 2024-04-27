@@ -1009,6 +1009,7 @@ export const SchemaType = {
 
 export type ScalarValue = {
   value: string;
+  factoryMethodValue: string;
   isEnum: boolean;
   hasReadonlyProps: boolean;
   type: SchemaType;

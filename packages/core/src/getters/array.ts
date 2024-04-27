@@ -45,6 +45,7 @@ export const getArray = ({
     }
     return {
       type: 'array',
+      factoryMethodValue: `[]`,
       isEnum: false,
       isRef: false,
       value: `[${resolvedObjects.map((o) => o.value).join(', ')}]`,
@@ -72,6 +73,7 @@ export const getArray = ({
           ? `(${resolvedObject.value})[]`
           : `${resolvedObject.value}[]`
       }`,
+      factoryMethodValue: `[]`,
       imports: resolvedObject.imports,
       schemas: resolvedObject.schemas,
       isEnum: false,
@@ -86,6 +88,7 @@ export const getArray = ({
   ) {
     return {
       value: 'unknown[]',
+      factoryMethodValue: `[]`,
       imports: [],
       schemas: [],
       isEnum: false,
