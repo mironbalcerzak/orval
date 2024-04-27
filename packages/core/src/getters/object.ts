@@ -35,6 +35,7 @@ export const getObject = ({
     const { name, specKey } = getRefInfo(item.$ref, context);
     return {
       value: name + nullable,
+      factoryMethodValue: `''`,
       imports: [{ name, specKey }],
       schemas: [],
       isEnum: false,
@@ -121,11 +122,13 @@ export const getObject = ({
         const isReadOnly = item.readOnly || (schema as SchemaObject).readOnly;
         if (!index) {
           acc.value += '{';
+            acc.factoryMethodValue += '{\n  return {';
         }
 
         const doc = jsDoc(schema as SchemaObject, true, context);
 
         acc.hasReadonlyProps ||= isReadOnly || false;
+        acc.factoryMethodValue += `\n    ${getKey(key)}: ${resolvedValue.factoryMethodValue},`;
 
         const aliasedImports = getAliasedImports({
           name,
@@ -163,6 +166,7 @@ export const getObject = ({
             }
           } else {
             acc.value += '\n}';
+            acc.factoryMethodValue += '\n  };\n}';
           }
 
           acc.value += nullable;
@@ -174,6 +178,7 @@ export const getObject = ({
         imports: [],
         schemas: [],
         value: '',
+        factoryMethodValue: '',
         isEnum: false,
         type: 'object' as SchemaType,
         isRef: false,
@@ -189,6 +194,7 @@ export const getObject = ({
     if (isBoolean(item.additionalProperties)) {
       return {
         value: `{ [key: string]: unknown }` + nullable,
+        factoryMethodValue: `{}`,
         imports: [],
         schemas: [],
         isEnum: false,
@@ -204,6 +210,7 @@ export const getObject = ({
     });
     return {
       value: `{[key: string]: ${resolvedValue.value}}` + nullable,
+      factoryMethodValue: `{}`,
       imports: resolvedValue.imports ?? [],
       schemas: resolvedValue.schemas ?? [],
       isEnum: false,
@@ -217,6 +224,7 @@ export const getObject = ({
   if (itemWithConst.const) {
     return {
       value: `'${itemWithConst.const}'` + nullable,
+      factoryMethodValue: `null`,
       imports: [],
       schemas: [],
       isEnum: false,
@@ -230,6 +238,7 @@ export const getObject = ({
     value:
       (item.type === 'object' ? '{ [key: string]: unknown }' : 'unknown') +
       nullable,
+    factoryMethodValue: `${item.type === 'object' ? '{}' : 'null'}`,
     imports: [],
     schemas: [],
     isEnum: false,

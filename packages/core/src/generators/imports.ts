@@ -54,7 +54,7 @@ export const generateImports = ({
         } } from \'./${upath.join(path, fileName)}\';`;
       }
 
-      return `import ${!values && !isConstant ? 'type ' : ''}{ ${name}${
+      return `import { create${name}, ${name}${
         alias ? ` as ${alias}` : ''
       } } from \'./${fileName}\';`;
     })
