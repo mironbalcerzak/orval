@@ -138,6 +138,7 @@ ${
   const allResponses = [...response.types.success, ...response.types.errors];
   if (allResponses.length === 0) {
     allResponses.push({
+      factoryMethodValue: '',
       contentType: '',
       hasReadonlyProps: false,
       imports: [],
@@ -146,7 +147,7 @@ ${
       key: 'default',
       schemas: [],
       type: 'unknown',
-      value: 'unknown',
+      value: 'unknown'
     });
   }
   const nonDefaultStatuses = allResponses
