@@ -77,6 +77,7 @@ export const getResReqTypes = (
           return [
             {
               value: name,
+              factoryMethodValue: name,
               imports: [{ name, specKey, schemaName }],
               schemas: [],
               type: 'unknown',
@@ -134,6 +135,7 @@ export const getResReqTypes = (
           {
             value: name,
             imports: [{ name, specKey, schemaName }, ...additionalImports],
+            factoryMethodValue: name,
             schemas: [],
             type: 'unknown',
             isEnum: false,
@@ -228,6 +230,7 @@ export const getResReqTypes = (
       return [
         {
           value: defaultType,
+          factoryMethodValue: `''`,
           imports: [],
           schemas: [],
           type: defaultType,
