@@ -57,6 +57,7 @@ export const getScalar = ({
 
       return {
         value: value + nullable,
+        factoryMethodValue: `0`,
         isEnum,
         type: 'number',
         schemas: [],
@@ -78,6 +79,7 @@ export const getScalar = ({
 
       return {
         value: value + nullable,
+        factoryMethodValue: `false`,
         type: 'boolean',
         isEnum: false,
         schemas: [],
@@ -132,6 +134,7 @@ export const getScalar = ({
 
       return {
         value: value + nullable,
+        factoryMethodValue: `''`,
         isEnum,
         type: 'string',
         imports: [],
@@ -146,6 +149,7 @@ export const getScalar = ({
     case 'null':
       return {
         value: 'null',
+        factoryMethodValue: `null`,
         isEnum: false,
         type: 'null',
         imports: [],
@@ -181,6 +185,7 @@ export const getScalar = ({
 
         return {
           value: value + nullable,
+          factoryMethodValue: enumItems[0],
           isEnum: true,
           type: 'string',
           imports: [],
