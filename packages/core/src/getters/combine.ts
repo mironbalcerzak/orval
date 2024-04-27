@@ -197,6 +197,7 @@ export const combineSchemas = ({
 
     return {
       value: `typeof ${pascal(name)}[keyof typeof ${pascal(name)}] ${nullable}`,
+      factoryMethodValue: `{}`,
       imports: [
         {
           name: pascal(name),
@@ -245,6 +246,7 @@ export const combineSchemas = ({
 
   return {
     value: value + nullable,
+    factoryMethodValue: `{}`,
     imports: resolvedValue
       ? [...resolvedData.imports, ...resolvedValue.imports]
       : resolvedData.imports,
