@@ -128,7 +128,9 @@ export const getObject = ({
         const doc = jsDoc(schema as SchemaObject, true, context);
 
         acc.hasReadonlyProps ||= isReadOnly || false;
-        acc.factoryMethodValue += `\n    ${getKey(key)}: ${resolvedValue.factoryMethodValue},`;
+        if (!isReadOnly || isRequired) {
+          acc.factoryMethodValue += `\n    ${getKey(key)}: ${resolvedValue.factoryMethodValue},`;
+        }
 
         const aliasedImports = getAliasedImports({
           name,
