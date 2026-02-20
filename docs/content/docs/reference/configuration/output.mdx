@@ -422,6 +422,58 @@ export default defineConfig({
 
 Path to your `package.json` (usually auto-detected).
 
+## factoryMethods
+
+**Type:** `Object`
+
+Enable generating factory methods for your data models. This is useful for testing or initializing empty data structures.
+
+### generate
+
+**Type:** `Boolean`
+**Default:** `false`
+
+Enable or disable factory generation.
+
+### prefix
+
+**Type:** `String`
+**Default:** `'create'`
+
+Prefix for the generated factory function.
+
+### location
+
+**Type:** `'inline-with-model' | 'separate-file' | 'combined-separate-file'`
+**Default:** `'inline-with-model'`
+
+Where to output the factory methods:
+- `inline-with-model`: Appends the factory method to the end of the schema file.
+- `separate-file`: Creates a new file alongside the schema file (e.g., `user.factory.ts`).
+- `combined-separate-file`: Creates a single `factoryMethods.ts` file in the schema folder containing all factory methods.
+
+### optionalPropertyStrategy
+
+**Type:** `'include' | 'omit'`
+**Default:** `'omit'`
+
+Whether to include optional schema properties in the generated factory payload.
+
+```ts title="orval.config.ts"
+export default defineConfig({
+  petstore: {
+    output: {
+      factoryMethods: {
+        generate: true,
+        prefix: 'build',
+        location: 'separate-file',
+        optionalPropertyStrategy: 'include'
+      },
+    },
+  },
+});
+```
+
 ---
 
 ## override

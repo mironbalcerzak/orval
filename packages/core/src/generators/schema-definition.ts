@@ -23,6 +23,7 @@ import {
   pascal,
   sanitize,
 } from '../utils';
+import { generateFactory } from './factory';
 import { generateInterface } from './interface';
 
 /**
@@ -185,11 +186,22 @@ function generateSchemaDefinitions(
   }
 
   if (shouldCreateInterface(schema)) {
-    return generateInterface({
+    const interfaceSchemas = generateInterface({
       name: sanitizedSchemaName,
       schema,
       context,
     });
+
+    if (context.output.override.factoryMethods?.generate) {
+      const mainSchema = interfaceSchemas[interfaceSchemas.length - 1];
+      mainSchema.factory = generateFactory(
+        schema,
+        sanitizedSchemaName,
+        context,
+      );
+    }
+
+    return interfaceSchemas;
   }
 
   const resolvedValue = resolveValue({
@@ -252,14 +264,17 @@ function generateSchemaDefinitions(
     output += `export type ${sanitizedSchemaName} = ${resolvedValue.value};\n`;
   }
 
-  return [
-    ...resolvedValue.schemas,
-    {
-      name: sanitizedSchemaName,
-      model: output,
-      imports,
-      dependencies: resolvedValue.dependencies,
-      schema,
-    },
-  ];
+  const result: GeneratorSchema = {
+    name: sanitizedSchemaName,
+    model: output,
+    imports,
+    dependencies: resolvedValue.dependencies,
+    schema,
+  };
+
+  if (context.output.override.factoryMethods?.generate) {
+    result.factory = generateFactory(schema, sanitizedSchemaName, context);
+  }
+
+  return [...resolvedValue.schemas, result];
 }

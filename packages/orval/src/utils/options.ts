@@ -7,6 +7,7 @@ import {
   type ClientMockBuilder,
   type ConfigExternal,
   createLogger,
+  type FactoryMethodsOptions,
   FormDataArrayHandling,
   type GlobalMockOptions,
   type GlobalOptions,
@@ -26,6 +27,7 @@ import {
   type JsDocOptions,
   type Mutator,
   NamingConvention,
+  type NormalizedFactoryMethodsOptions,
   type NormalizedHonoOptions,
   type NormalizedHookOptions,
   type NormalizedJsDocOptions,
@@ -116,6 +118,36 @@ function normalizeSchemasOption(
   };
 }
 
+function normalizeFactoryMethods(
+  factoryMethods?: FactoryMethodsOptions,
+  globalFactoryMethods?: FactoryMethodsOptions,
+): NormalizedFactoryMethodsOptions {
+  const defaultFactoryMethods: NormalizedFactoryMethodsOptions = {
+    generate: false,
+    prefix: 'create',
+    location: 'inline-with-model',
+    optionalPropertyStrategy: 'omit',
+  };
+  return {
+    generate:
+      factoryMethods?.generate ??
+      globalFactoryMethods?.generate ??
+      defaultFactoryMethods.generate,
+    prefix:
+      factoryMethods?.prefix ??
+      globalFactoryMethods?.prefix ??
+      defaultFactoryMethods.prefix,
+    location:
+      factoryMethods?.location ??
+      globalFactoryMethods?.location ??
+      defaultFactoryMethods.location,
+    optionalPropertyStrategy:
+      factoryMethods?.optionalPropertyStrategy ??
+      globalFactoryMethods?.optionalPropertyStrategy ??
+      defaultFactoryMethods.optionalPropertyStrategy,
+  };
+}
+
 export async function normalizeOptions(
   optionsExport: OptionsExport,
   workspace = process.cwd(),
@@ -187,6 +219,8 @@ export async function normalizeOptions(
     ...normalizeQueryOptions(outputOptions.override?.query, workspace),
   };
 
+  const globalFactoryMethods = outputOptions.factoryMethods;
+
   let resolvedInputTarget;
   if (globalOptions.input) {
     resolvedInputTarget = Array.isArray(globalOptions.input)
@@ -251,6 +285,10 @@ export async function normalizeOptions(
       baseUrl: outputOptions.baseUrl,
       unionAddMissingProperties:
         outputOptions.unionAddMissingProperties ?? false,
+      factoryMethods: normalizeFactoryMethods(
+        outputOptions.factoryMethods,
+        globalFactoryMethods,
+      ),
       override: {
         ...outputOptions.override,
         mock: {
@@ -429,6 +467,10 @@ export async function normalizeOptions(
         suppressReadonlyModifier:
           outputOptions.override?.suppressReadonlyModifier ?? false,
         aliasCombinedTypes: outputOptions.override?.aliasCombinedTypes ?? false,
+        factoryMethods: normalizeFactoryMethods(
+          outputOptions.override?.factoryMethods,
+          globalFactoryMethods,
+        ),
       },
       allParamsOptional: outputOptions.allParamsOptional ?? false,
       urlEncodeParameters: outputOptions.urlEncodeParameters ?? false,

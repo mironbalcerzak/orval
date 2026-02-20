@@ -5,9 +5,11 @@ import { groupBy } from 'remeda';
 
 import { generateImports } from '../generators';
 import {
+  type FactoryMethodsLocation,
   type GeneratorImport,
   type GeneratorSchema,
   NamingConvention,
+  type NormalizedFactoryMethodsOptions,
 } from '../types';
 import { conventionName, upath } from '../utils';
 
@@ -92,6 +94,21 @@ function fixSchemaImports(
       }
       return imp;
     });
+
+    if (schema.factory) {
+      schema.factory.imports = schema.factory.imports.map((imp) => {
+        const baseName = imp.schemaName || imp.name;
+        if (targetSchemaNames.has(baseName)) {
+          const fileName = conventionName(baseName, namingConvention);
+          return {
+            ...imp,
+            importPath:
+              upath.joinSafe(relativePath, fileName) + importExtension,
+          };
+        }
+        return imp;
+      });
+    }
   }
 }
 
@@ -212,7 +229,53 @@ function normalizeCanonicalImportPaths(
 
       return { ...imp, importPath };
     });
+
+    if (schema.factory) {
+      schema.factory.imports = schema.factory.imports.map((imp) => {
+        const baseName = imp.schemaName || imp.name;
+        const resolvedImportKey = resolveImportKey(
+          schemaPath,
+          imp.importPath ?? `./${conventionName(baseName, namingConvention)}`,
+          fileExtension,
+        );
+        const canonical = canonicalPathMap.get(resolvedImportKey);
+        if (!canonical?.importPath) return imp;
+
+        const importPath = removeFileExtension(
+          upath.relativeSafe(
+            schemaPath,
+            canonical.importPath.replaceAll('\\', '/'),
+          ),
+          fileExtension,
+        );
+
+        return { ...imp, importPath };
+      });
+    }
   }
+}
+
+function resolveFactoryImports(
+  imports: GeneratorImport[],
+  location: FactoryMethodsLocation,
+  namingConvention: NamingConvention,
+): GeneratorImport[] {
+  return imports.map((imp) => {
+    if (imp.isFactory) {
+      const baseName = conventionName(
+        imp.schemaName || imp.name,
+        namingConvention,
+      );
+      let importPath = imp.importPath ?? `./${baseName}`;
+      if (location === 'separate-file') {
+        importPath = `${importPath}.factory`;
+      } else if (location === 'combined-separate-file') {
+        importPath = `./factoryMethods`;
+      }
+      return { ...imp, importPath };
+    }
+    return imp;
+  });
 }
 
 function mergeSchemaGroup(schemas: GeneratorSchema[]): GeneratorSchema {
@@ -228,12 +291,14 @@ function mergeSchemaGroup(schemas: GeneratorSchema[]): GeneratorSchema {
   const mergedDependencies = [
     ...new Set(schemas.flatMap((schema) => schema.dependencies ?? [])),
   ];
+  const factory = schemas.find((schema) => schema.factory)?.factory;
   return {
     name: baseSchemaName,
     schema: baseSchema,
     model: schemas.map((schema) => schema.model).join('\n'),
     imports: mergedImports,
     dependencies: mergedDependencies,
+    factory,
   };
 }
 
@@ -272,7 +337,8 @@ function getSchema({
     imports: imports.filter(
       (imp) =>
         !model.includes(`type ${imp.alias ?? imp.name} =`) &&
-        !model.includes(`interface ${imp.alias ?? imp.name} {`),
+        !model.includes(`interface ${imp.alias ?? imp.name} {`) &&
+        !model.includes(`function ${imp.alias ?? imp.name}(`),
     ),
     target,
     namingConvention,
@@ -342,6 +408,7 @@ interface WriteSchemasOptions {
   fileExtension: string;
   header: string;
   indexFiles: boolean;
+  factoryMethods?: NormalizedFactoryMethodsOptions;
 }
 
 export async function writeSchemas({
@@ -352,6 +419,7 @@ export async function writeSchemas({
   fileExtension,
   header,
   indexFiles,
+  factoryMethods,
 }: WriteSchemasOptions) {
   const schemaGroups = getSchemaGroups(
     schemaPath,
@@ -375,8 +443,11 @@ export async function writeSchemas({
     fileExtension,
   );
 
+  let combinedFactoryModel = '';
+  const combinedFactoryImports: GeneratorImport[] = [];
+
   for (const groupSchemas of Object.values(schemaGroups)) {
-    if (groupSchemas.length === 1) {
+    if (groupSchemas.length === 1 && !groupSchemas[0].factory) {
       await writeSchema({
         path: schemaPath,
         schema: groupSchemas[0],
@@ -388,13 +459,77 @@ export async function writeSchemas({
       continue;
     }
 
-    const mergedSchema = mergeSchemaGroup(groupSchemas);
+    const mergedSchema =
+      groupSchemas.length === 1
+        ? groupSchemas[0]
+        : mergeSchemaGroup(groupSchemas);
+
+    if (mergedSchema.factory) {
+      const location = factoryMethods?.location || 'inline-with-model';
+      const resolvedImports = resolveFactoryImports(
+        mergedSchema.factory.imports,
+        location,
+        namingConvention,
+      );
+
+      switch (location) {
+        case 'inline-with-model': {
+          mergedSchema.model += '\n' + mergedSchema.factory.model;
+          mergedSchema.imports.push(...resolvedImports);
+
+          break;
+        }
+        case 'separate-file': {
+          const factorySchema: GeneratorSchema = {
+            name: mergedSchema.name,
+            model: mergedSchema.factory.model,
+            imports: resolvedImports,
+          };
+          await writeSchema({
+            path: schemaPath,
+            schema: factorySchema,
+            target,
+            namingConvention,
+            fileExtension: `.factory${fileExtension}`,
+            header,
+          });
+
+          break;
+        }
+        case 'combined-separate-file': {
+          combinedFactoryModel += mergedSchema.factory.model + '\n';
+          combinedFactoryImports.push(...resolvedImports);
+
+          break;
+        }
+        // No default
+      }
+    }
 
     await writeSchema({
       path: schemaPath,
       schema: mergedSchema,
       target,
       namingConvention,
+      fileExtension,
+      header,
+    });
+  }
+
+  if (
+    factoryMethods?.location === 'combined-separate-file' &&
+    combinedFactoryModel
+  ) {
+    const factorySchema: GeneratorSchema = {
+      name: 'factoryMethods',
+      model: combinedFactoryModel,
+      imports: combinedFactoryImports,
+    };
+    await writeSchema({
+      path: schemaPath,
+      schema: factorySchema,
+      target,
+      namingConvention: NamingConvention.CAMEL_CASE,
       fileExtension,
       header,
     });
@@ -418,10 +553,33 @@ export async function writeSchemas({
     try {
       // Create unique export statements from schemas (deduplicate by schema name)
       const uniqueSchemaNames = [...conventionNamesSet];
+      const newExports: string[] = [];
+
+      if (factoryMethods?.generate) {
+        if (factoryMethods.location === 'separate-file') {
+          for (const groupSchemas of Object.values(schemaGroups)) {
+            const mergedSchema =
+              groupSchemas.length === 1
+                ? groupSchemas[0]
+                : mergeSchemaGroup(groupSchemas);
+            if (mergedSchema.factory) {
+              newExports.push(
+                `export * from './${conventionName(mergedSchema.name, namingConvention)}.factory${ext}';`,
+              );
+            }
+          }
+        } else if (
+          factoryMethods.location === 'combined-separate-file' &&
+          combinedFactoryModel
+        ) {
+          newExports.push(`export * from './factoryMethods${ext}';`);
+        }
+      }
 
       // Create export statements
       const currentExports = uniqueSchemaNames
         .map((schemaName) => `export * from './${schemaName}${ext}';`)
+        .concat(newExports)
         .toSorted((a, b) => a.localeCompare(b));
 
       const existingContent = await fs.readFile(schemaFilePath, 'utf8');

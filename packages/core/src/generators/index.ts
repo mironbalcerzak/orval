@@ -1,4 +1,5 @@
 export * from './component-definition';
+export * from './factory';
 export * from './imports';
 export * from './models-inline';
 export * from './mutator';

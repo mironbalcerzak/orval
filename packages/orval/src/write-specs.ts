@@ -134,6 +134,7 @@ export async function writeSpecs(
             fileExtension,
             header,
             indexFiles: output.indexFiles,
+            factoryMethods: output.override.factoryMethods,
           });
         }
 
@@ -147,6 +148,7 @@ export async function writeSpecs(
             fileExtension,
             header,
             indexFiles: output.indexFiles,
+            factoryMethods: output.override.factoryMethods,
           });
 
           // Add re-export from operations in the main schemas index
@@ -168,6 +170,7 @@ export async function writeSpecs(
           fileExtension,
           header,
           indexFiles: output.indexFiles,
+          factoryMethods: output.override.factoryMethods,
         });
       }
     } else {
@@ -210,6 +213,7 @@ export async function writeSpecs(
               fileExtension,
               header,
               indexFiles: output.indexFiles,
+              factoryMethods: output.override.factoryMethods,
             });
           }
 
@@ -222,6 +226,7 @@ export async function writeSpecs(
               fileExtension,
               header,
               indexFiles: output.indexFiles,
+              factoryMethods: output.override.factoryMethods,
             });
 
             // Add re-export from operations in the main schemas index
@@ -243,6 +248,7 @@ export async function writeSpecs(
             fileExtension,
             header,
             indexFiles: output.indexFiles,
+            factoryMethods: output.override.factoryMethods,
           });
         }
       } else {

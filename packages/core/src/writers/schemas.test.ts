@@ -698,3 +698,144 @@ describe('writeSchemas indexFiles', () => {
     }
   });
 });
+
+describe('writeSchemas with factoryMethods', () => {
+  const createMockSchemaWithFactory = (name: string): GeneratorSchema => ({
+    name,
+    model: `export type ${name} = { id: string };`,
+    imports: [],
+    schema: { type: 'object' },
+    factory: {
+      model: `export function create${name}() { return { id: '' }; }`,
+      imports: [{ name, isFactory: false }],
+    },
+  });
+
+  it('should generate inline-with-model factory methods', async () => {
+    const tempDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'orval-schema-inline-factory-'),
+    );
+    const schemaPath = path.join(tempDir, 'schemas');
+
+    try {
+      await writeSchemas({
+        schemaPath,
+        schemas: [createMockSchemaWithFactory('UserDto')],
+        target: 'src/api',
+        namingConvention: NamingConvention.CAMEL_CASE,
+        fileExtension: '.ts',
+        header: '',
+        indexFiles: true,
+        factoryMethods: {
+          generate: true,
+          location: 'inline-with-model',
+          prefix: 'create',
+          optionalPropertyStrategy: 'omit',
+        },
+      });
+
+      const filePath = path.join(schemaPath, 'userDto.ts');
+      const content = await fs.readFile(filePath, 'utf8');
+
+      expect(content).toContain('export type UserDto = { id: string };');
+      expect(content).toContain(
+        "export function createUserDto() { return { id: '' }; }",
+      );
+    } finally {
+      await fs.remove(tempDir);
+    }
+  });
+
+  it('should generate separate-file factory methods', async () => {
+    const tempDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'orval-schema-separate-factory-'),
+    );
+    const schemaPath = path.join(tempDir, 'schemas');
+
+    try {
+      await writeSchemas({
+        schemaPath,
+        schemas: [createMockSchemaWithFactory('UserDto')],
+        target: 'src/api',
+        namingConvention: NamingConvention.CAMEL_CASE,
+        fileExtension: '.ts',
+        header: '',
+        indexFiles: true,
+        factoryMethods: {
+          generate: true,
+          location: 'separate-file',
+          prefix: 'create',
+          optionalPropertyStrategy: 'omit',
+        },
+      });
+
+      const schemaFilePath = path.join(schemaPath, 'userDto.ts');
+      const schemaContent = await fs.readFile(schemaFilePath, 'utf8');
+      expect(schemaContent).toContain('export type UserDto = { id: string };');
+      expect(schemaContent).not.toContain('export function createUserDto');
+
+      const factoryFilePath = path.join(schemaPath, 'userDto.factory.ts');
+      const factoryContent = await fs.readFile(factoryFilePath, 'utf8');
+      expect(factoryContent).toContain(
+        "export function createUserDto() { return { id: '' }; }",
+      );
+
+      const indexPath = path.join(schemaPath, 'index.ts');
+      const indexContent = await fs.readFile(indexPath, 'utf8');
+      expect(indexContent).toContain("export * from './userDto';");
+      expect(indexContent).toContain("export * from './userDto.factory';");
+    } finally {
+      await fs.remove(tempDir);
+    }
+  });
+
+  it('should generate combined-separate-file factory methods', async () => {
+    const tempDir = await fs.mkdtemp(
+      path.join(os.tmpdir(), 'orval-schema-combined-factory-'),
+    );
+    const schemaPath = path.join(tempDir, 'schemas');
+
+    try {
+      await writeSchemas({
+        schemaPath,
+        schemas: [
+          createMockSchemaWithFactory('UserDto'),
+          createMockSchemaWithFactory('PostDto'),
+        ],
+        target: 'src/api',
+        namingConvention: NamingConvention.CAMEL_CASE,
+        fileExtension: '.ts',
+        header: '',
+        indexFiles: true,
+        factoryMethods: {
+          generate: true,
+          location: 'combined-separate-file',
+          prefix: 'create',
+          optionalPropertyStrategy: 'omit',
+        },
+      });
+
+      const userFilePath = path.join(schemaPath, 'userDto.ts');
+      const userContent = await fs.readFile(userFilePath, 'utf8');
+      expect(userContent).toContain('export type UserDto = { id: string };');
+      expect(userContent).not.toContain('export function createUserDto');
+
+      const factoryFilePath = path.join(schemaPath, 'factoryMethods.ts');
+      const factoryContent = await fs.readFile(factoryFilePath, 'utf8');
+      expect(factoryContent).toContain(
+        "export function createUserDto() { return { id: '' }; }",
+      );
+      expect(factoryContent).toContain(
+        "export function createPostDto() { return { id: '' }; }",
+      );
+
+      const indexPath = path.join(schemaPath, 'index.ts');
+      const indexContent = await fs.readFile(indexPath, 'utf8');
+      expect(indexContent).toContain("export * from './userDto';");
+      expect(indexContent).toContain("export * from './postDto';");
+      expect(indexContent).toContain("export * from './factoryMethods';");
+    } finally {
+      await fs.remove(tempDir);
+    }
+  });
+});

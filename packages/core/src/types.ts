@@ -24,6 +24,26 @@ export interface NormalizedOptions {
   hooks: NormalizedHookOptions;
 }
 
+export type FactoryMethodsLocation =
+  | 'inline-with-model'
+  | 'separate-file'
+  | 'combined-separate-file';
+export type FactoryMethodsOptionalPropertyStrategy = 'include' | 'omit';
+
+export type FactoryMethodsOptions = {
+  generate?: boolean;
+  prefix?: string;
+  location?: FactoryMethodsLocation;
+  optionalPropertyStrategy?: FactoryMethodsOptionalPropertyStrategy;
+};
+
+export type NormalizedFactoryMethodsOptions = {
+  generate: boolean;
+  prefix: string;
+  location: FactoryMethodsLocation;
+  optionalPropertyStrategy: FactoryMethodsOptionalPropertyStrategy;
+};
+
 export type NormalizedOutputOptions = {
   workspace?: string;
   target: string;
@@ -50,6 +70,7 @@ export type NormalizedOutputOptions = {
   unionAddMissingProperties: boolean;
   optionsParamRequired: boolean;
   propertySortOrder: PropertySortOrder;
+  factoryMethods: NormalizedFactoryMethodsOptions;
 };
 
 export type NormalizedParamsSerializerOptions = {
@@ -113,6 +134,7 @@ export type NormalizedOverrideOutput = {
    * @default false
    */
   useNullForOptional?: boolean;
+  factoryMethods: NormalizedFactoryMethodsOptions;
 };
 
 export type NormalizedMutator = {
@@ -249,6 +271,7 @@ export type OutputOptions = {
   unionAddMissingProperties?: boolean;
   optionsParamRequired?: boolean;
   propertySortOrder?: PropertySortOrder;
+  factoryMethods?: FactoryMethodsOptions;
 };
 
 export type InputFiltersOptions = {
@@ -494,6 +517,7 @@ export type OverrideOutput = {
    * @default false
    */
   useNullForOptional?: boolean;
+  factoryMethods?: FactoryMethodsOptions;
 };
 
 export type JsDocOptions = {
@@ -839,6 +863,10 @@ export type GeneratorSchema = {
   imports: GeneratorImport[];
   dependencies?: string[];
   schema?: OpenApiSchemaObject;
+  factory?: {
+    model: string;
+    imports: GeneratorImport[];
+  };
 };
 
 export type GeneratorImport = {
@@ -852,6 +880,7 @@ export type GeneratorImport = {
   readonly syntheticDefaultImport?: boolean;
   readonly namespaceImport?: boolean;
   readonly importPath?: string;
+  readonly isFactory?: boolean;
 };
 
 export type GeneratorDependency = {
