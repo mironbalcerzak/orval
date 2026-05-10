@@ -150,7 +150,8 @@ export const useListPets = <TError = Promise<Error>>(
 ) => {
   const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
 
-  const isEnabled = swrOptions?.enabled !== false && !!version;
+  const isEnabled =
+    swrOptions?.enabled !== false && version !== null && version !== undefined;
   const swrKey =
     swrOptions?.swrKey ??
     (() => (isEnabled ? getListPetsKey({ version }, params) : null));
@@ -357,7 +358,12 @@ export const useShowPetById = <TError = Promise<Error>>(
 ) => {
   const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
 
-  const isEnabled = swrOptions?.enabled !== false && !!(version && petId);
+  const isEnabled =
+    swrOptions?.enabled !== false &&
+    version !== null &&
+    version !== undefined &&
+    petId !== null &&
+    petId !== undefined;
   const swrKey =
     swrOptions?.swrKey ??
     (() => (isEnabled ? getShowPetByIdKey({ version, petId }) : null));
@@ -554,7 +560,8 @@ export const useHealthCheck = <TError = Promise<Error>>(
 ) => {
   const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
 
-  const isEnabled = swrOptions?.enabled !== false && !!version;
+  const isEnabled =
+    swrOptions?.enabled !== false && version !== null && version !== undefined;
   const swrKey =
     swrOptions?.swrKey ??
     (() => (isEnabled ? getHealthCheckKey({ version }) : null));
@@ -647,7 +654,12 @@ export const useShowPetWithOwner = <TError = Promise<Error>>(
 ) => {
   const { swr: swrOptions, fetch: fetchOptions } = options ?? {};
 
-  const isEnabled = swrOptions?.enabled !== false && !!(version && petId);
+  const isEnabled =
+    swrOptions?.enabled !== false &&
+    version !== null &&
+    version !== undefined &&
+    petId !== null &&
+    petId !== undefined;
   const swrKey =
     swrOptions?.swrKey ??
     (() => (isEnabled ? getShowPetWithOwnerKey({ version, petId }) : null));
